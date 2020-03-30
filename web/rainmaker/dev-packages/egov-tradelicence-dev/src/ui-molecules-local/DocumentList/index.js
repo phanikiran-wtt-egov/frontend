@@ -84,7 +84,7 @@ class DocumentList extends Component {
     if (uploadedDocuments && Object.keys(uploadedDocuments).length) {
       let simplified = Object.values(uploadedDocuments).map(item => item[0]);
       let uploadedDocumentsArranged = documents.reduce((acc, item, ind) => {
-        const index = simplified.findIndex(i => i.documentType === item.name);
+        const index = simplified.findIndex(i => i.documentType === item.code);
         // !isUndefined(index) && (acc[ind] = [simplified[index]]);
         index > -1 && (acc[ind] = [simplified[index]]);
         return acc;
