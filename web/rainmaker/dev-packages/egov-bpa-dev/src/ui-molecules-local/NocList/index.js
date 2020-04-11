@@ -118,7 +118,7 @@ const styles = {
 };
 
 const requiredIcon = (
-  <sup style={{ color: "#E54D42", paddingLeft: "5px" }}>*</sup>
+  <sup style={{ color: "#5b5b5b", fontSize: "12px", paddingLeft: "5px" }}>*</sup>
 );
 
 class NocList extends Component {
@@ -186,11 +186,12 @@ class NocList extends Component {
           }
         });
     });
-    prepareFinalObject("nocDocumentsUploadRedux", nocDocumentsUploadRedux);
+    prepareFinalObject(this.props.jsonPath, nocDocumentsUploadRedux);
   };
 
   prepareDocumentsInEmployee = async (nocDocuments, bpaDetails) => {
     let documnts = [];
+    return ;
     if (nocDocuments) {
       Object.keys(nocDocuments).forEach(function (key) {
         if (nocDocuments && nocDocuments[key]) {
@@ -199,56 +200,61 @@ class NocList extends Component {
       });
     }
 
-    prepareFinalObject("nocDocumentsUploadRedux", {});
+    // prepareFinalObject(this.props.jsonPath, {});
     let requiredDocuments = [], finalQstn = [];
     if (documnts && documnts.length > 0) {
       documnts.forEach(documents => {
         if (documents && documents.documents && documents.dropDownValues && documents.dropDownValues.value) {
+          documents.documents.map(docs => { 
           let doc = {}, finalDocs = [];
           doc.documentType = documents.dropDownValues.value;
-          doc.fileStoreId = documents.documents[0].fileStoreId;
-          doc.fileStore = documents.documents[0].fileStoreId;
-          doc.fileName = documents.documents[0].fileName;
-          doc.fileUrl = documents.documents[0].fileUrl;
+          doc.fileStoreId = docs.fileStoreId;
+          doc.fileStore = docs.fileStoreId;
+          doc.fileName = docs.fileName;
+          doc.fileUrl = docs.fileUrl;
           if (doc.id) {
-            doc.id = documents.documents[0].id;
+            doc.id = docs.id;
           }
           if(bpaDetails.additionalDetails) {
-            if(bpaDetails.additionalDetails.fieldinspection_pending && bpaDetails.additionalDetails.fieldinspection_pending[0]) {
-              if(bpaDetails.additionalDetails.fieldinspection_pending[0].docs) {
-                finalQstn.push(doc);
-                bpaDetails.additionalDetails.fieldinspection_pending[0].docs = finalQstn
-              } else {
-                bpaDetails.additionalDetails.fieldinspection_pending.push({"docs" : doc, "question" : []})
-              }
-            }
-           else {
-            // bpaDetails.additionalDetails = [];
-            let documnt = [], fiDocs = [], details;
-            documnt[0] = {}; 
-            documnt[0].docs = [];
-            documnt[0].questions = [];
-            documnt[0].docs.push(doc);
-            fiDocs.push({
-              "docs" : documnt[0].docs,
-              "questions" : []
-            })
-            details = { "fieldinspection_pending" : fiDocs};
-            finalDocs.push(details);
-            finalDocs = finalDocs[0];
-            let additionalDetailsDocs = {
-              ...bpaDetails.additionalDetails,
-              fieldinspection_pending : fiDocs
-            }
-            bpaDetails.additionalDetails = additionalDetailsDocs;
+           
+            finalQstn.push(doc);
+          //   if(bpaDetails.additionalDetails.fieldinspection_pending && 
+            //bpaDetails.additionalDetails.fieldinspection_pending[0]) {
+          //     if(bpaDetails.additionalDetails.fieldinspection_pending[0].docs) {
+          //       finalQstn.push(doc);
+          //       bpaDetails.additionalDetails.fieldinspection_pending[0].docs = finalQstn
+          //     } else {
+          //       bpaDetails.additionalDetails.fieldinspection_pending.push({"docs" : doc, "question" : []})
+          //     }
+          //   }
+          //  else {
+          //   // bpaDetails.additionalDetails = [];
+          //   let documnt = [], fiDocs = [], details;
+          //   documnt[0] = {}; 
+          //   documnt[0].docs = [];
+          //   documnt[0].questions = [];
+          //   documnt[0].docs.push(doc);
+          //   fiDocs.push({
+          //     "docs" : documnt[0].docs,
+          //     "questions" : []
+          //   })
+          //   details = { "fieldinspection_pending" : fiDocs};
+          //   finalDocs.push(details);
+          //   finalDocs = finalDocs[0];
+          //   let additionalDetailsDocs = {
+          //     ...bpaDetails.additionalDetails,
+          //     fieldinspection_pending : fiDocs
+          //   }
+          //   bpaDetails.additionalDetails = additionalDetailsDocs;
+          // }
           }
-        }
+          })
         }
       });
-  
-      if(bpaDetails.additionalDetails && bpaDetails.additionalDetails["fieldinspection_pending"] && bpaDetails.additionalDetails["fieldinspection_pending"][0] && bpaDetails.additionalDetails["fieldinspection_pending"][0].docs) {
-        prepareFinalObject("BPA",  bpaDetails.additionalDetails["fieldinspection_pending"][0].docs);
-      }
+      this.props.dispatch(prepareFinalObject(this.props.jsonPath, finalQstn));
+      // if(bpaDetails.additionalDetails && bpaDetails.additionalDetails["fieldinspection_pending"] && bpaDetails.additionalDetails["fieldinspection_pending"][0] && bpaDetails.additionalDetails["fieldinspection_pending"][0].docs) {
+      //   prepareFinalObject("BPA",  bpaDetails.additionalDetails["fieldinspection_pending"][0].docs);
+      // }
     }
   }
 
@@ -263,38 +269,56 @@ class NocList extends Component {
   handleDocument = async (file, fileStoreId) => {
     let { uploadedDocIndex } = this.state;
     const { prepareFinalObject, nocDocumentsUploadRedux, bpaDetails } = this.props;
-    const fileUrl = await getFileUrlFromAPI(fileStoreId);
-
-    let nocDocuments = {
-      ...nocDocumentsUploadRedux,
-      [uploadedDocIndex]: {
-        ...nocDocumentsUploadRedux[uploadedDocIndex],
-        documents: [
-          {
-            fileName: file.name,
-            fileStoreId,
-            fileUrl: Object.values(fileUrl)[0]
-          }
-        ]
+    const fileUrl = getFileUrlFromAPI(fileStoreId).then(fileUrl);
+    let nocDocuments = {};
+    if (nocDocumentsUploadRedux[uploadedDocIndex] && nocDocumentsUploadRedux[uploadedDocIndex].documents) {
+      nocDocumentsUploadRedux[uploadedDocIndex].documents.push({
+        fileName: file.name,
+        fileStoreId,
+        fileUrl: Object.values(fileUrl)[0]
+      });
+      nocDocuments = {
+        ...nocDocumentsUploadRedux
+      };
+    } else {
+      nocDocuments = {
+        ...nocDocumentsUploadRedux,
+        [uploadedDocIndex]: {
+          ...nocDocumentsUploadRedux[uploadedDocIndex],
+          documents: [
+            {
+              fileName: file.name,
+              fileStoreId,
+              fileUrl: Object.values(fileUrl)[0]
+            }
+          ]
+        }
       }
     }
-    prepareFinalObject("nocDocumentsUploadRedux", nocDocuments);
+
+    prepareFinalObject(this.props.jsonPath, nocDocuments);
   
     let isEmployee = process.env.REACT_APP_NAME === "Citizen" ? false : true
 
     if(isEmployee) {
       this.prepareDocumentsInEmployee(nocDocuments, bpaDetails);
-      }
+    }
 
   };
 
-  removeDocument = remDocIndex => {
-    const { prepareFinalObject } = this.props;
-    prepareFinalObject(
-      `nocDocumentsUploadRedux.${remDocIndex}.documents`,
-      undefined
-    );
+  removeDocument = (remDocIndex, docIndex) => {
+    const { prepareFinalObject, bpaDetails, nocDocumentsUploadRedux } = this.props;
+    for (let key in nocDocumentsUploadRedux) {
+      if (key === `${remDocIndex}`) {
+        nocDocumentsUploadRedux[key].documents.splice(docIndex, 1);
+      }
+    }
+    prepareFinalObject(this.props.jsonPath, nocDocumentsUploadRedux);
     this.forceUpdate();
+    let isEmployee = process.env.REACT_APP_NAME === "Citizen" ? false : true    
+    if(isEmployee) {
+      this.prepareDocumentsInEmployee(nocDocumentsUploadRedux, bpaDetails);
+    }
   };
 
   handleChange = (key, event) => {
@@ -306,7 +330,7 @@ class NocList extends Component {
         dropDownValues: { value: event.target.value }
       }
     };
-    prepareFinalObject(`nocDocumentsUploadRedux`, nocDocuments);
+    prepareFinalObject(this.props.jsonPath, nocDocuments);
 
     let isEmployee = process.env.REACT_APP_NAME === "Citizen" ? false : true
 
@@ -318,11 +342,11 @@ class NocList extends Component {
 
   getUploadCard = (card, key) => {
     const { classes, nocDocumentsUploadRedux } = this.props;
-    let jsonPath = `nocDocumentsUploadRedux[${key}].dropDownValues.value`;
+    let jsonPath = this.props.jsonPath+`[${key}].dropDownValues.value`;
     return (
       <Grid container={true}>
         <Grid item={true} xs={2} sm={1} className={classes.iconDiv}>
-          {nocDocumentsUploadRedux[key] && nocDocumentsUploadRedux[key].documents ? (
+          {nocDocumentsUploadRedux[key] && nocDocumentsUploadRedux[key].documents && nocDocumentsUploadRedux[key].documents.length ? (
             <div className={classes.documentSuccess}>
               <Icon>
                 <i class="material-icons">done</i>
@@ -362,7 +386,7 @@ class NocList extends Component {
               data={card.dropDownValues.menu}
               optionValue="code"
               optionLabel="label"
-              required={true}
+              required={card.required}
               onChange={event => this.handleChange(key, event)}
               jsonPath={jsonPath}
             />
@@ -372,7 +396,7 @@ class NocList extends Component {
           item={true}
           xs={12}
           sm={12}
-          md={3}
+          // md={4}
           className={classes.fileUploadDiv}
         >
           <UploadSingleFile
@@ -381,7 +405,7 @@ class NocList extends Component {
               handleFileUpload(e, this.handleDocument, this.props)
             }
             uploaded={
-              nocDocumentsUploadRedux[key] && nocDocumentsUploadRedux[key].documents
+              nocDocumentsUploadRedux[key] && nocDocumentsUploadRedux[key].documents && nocDocumentsUploadRedux[key].documents.length > 0
                 ? true
                 : false
             }
@@ -447,12 +471,13 @@ NocList.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const mapStateToProps = state => {
+const mapStateToProps = (state, ownprops) => {
+	debugger;
   const { screenConfiguration } = state;
   const { moduleName } = screenConfiguration;
   const nocDocumentsUploadRedux = get(
     screenConfiguration.preparedFinalObject,
-    "nocDocumentsUploadRedux",
+    ownprops.jsonPath,
     {}
   );
   const bpaDetails = get(
